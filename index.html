@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#14161C">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<title>5 de Oro Generator</title>
+<style>
+  :root {
+    --bg: #14161C;
+    --surface: #1D2029;
+    --surface-2: #262A36;
+    --border: #333747;
+    --text: #EDEBE3;
+    --text-secondary: #9C9CA3;
+    --text-muted: #6B6E79;
+    --gold: #D4A73D;
+    --gold-text: #F0D588;
+    --low: #3FA796;
+    --low-text: #8FE0D2;
+    --mid: #7C6FD1;
+    --mid-text: #C3BAF0;
+    --high: #C98A2E;
+    --high-text: #F0C878;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 480px; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
+  h1 { font-size: 20px; font-weight: 600; margin: 0 0 2px; letter-spacing: -0.01em; }
+  .subtitle { font-size: 13px; color: var(--text-muted); margin: 0 0 1.75rem; }
+  .legend { display: flex; gap: 14px; margin-bottom: 1.25rem; font-size: 12px; color: var(--text-secondary); flex-wrap: wrap; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; vertical-align: middle; }
+  .dot.ring { width: 8px; height: 8px; border-radius: 50%; background: transparent; border: 2px solid var(--gold); }
+  .toggle { display: flex; gap: 6px; margin-bottom: 10px; }
+  .toggle button {
+    flex: 1; padding: 10px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text-secondary); font-size: 14px; font-weight: 500;
+  }
+  .toggle button.active { background: rgba(212,167,61,0.14); border-color: var(--gold); color: var(--gold-text); }
+  .gen-btn {
+    width: 100%; padding: 14px; margin-bottom: 6px; border-radius: 10px; border: none;
+    background: var(--gold); color: #26190A; font-size: 15px; font-weight: 600;
+  }
+  .gen-btn:active { transform: scale(0.98); }
+  .meta { font-size: 12px; color: var(--text-muted); margin-bottom: 1.5rem; }
+  .combo-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 14px; margin-bottom: 10px;
+  }
+  .combo-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pill {
+    width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums;
+  }
+  .pill.extra-pill { background: rgba(212,167,61,0.10); color: var(--gold-text); border: 2px solid var(--gold); }
+  .save-row { display: flex; justify-content: flex-end; margin-top: 10px; }
+  .save-btn { padding: 7px 16px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text-secondary); font-size: 12px; font-weight: 500; }
+  .save-btn.done { border-color: var(--low); color: var(--low-text); }
+  .section-title { font-size: 15px; font-weight: 600; margin: 1.75rem 0 8px; }
+  textarea {
+    width: 100%; min-height: 84px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text); padding: 10px; font-size: 13px;
+    font-family: inherit; resize: vertical;
+  }
+  textarea::placeholder { color: var(--text-muted); }
+  .secondary-btn {
+    width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--surface-2); color: var(--text); font-size: 14px; font-weight: 500; margin-top: 8px;
+  }
+  .status-msg { font-size: 12px; color: var(--text-secondary); margin-top: 8px; min-height: 16px; }
+  .saved-row {
+    display: flex; align-items: center; gap: 10px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px;
+  }
+  .saved-nums { display: flex; gap: 5px; flex-wrap: wrap; flex: 1; }
+  .mini-pill {
+    width: 27px; height: 27px; border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums;
+  }
+  .mini-pill.extra-pill { border: 1.5px solid var(--gold); background: rgba(212,167,61,0.10); color: var(--gold-text); }
+  .saved-status { font-size: 11px; color: var(--text-muted); white-space: nowrap; text-align: right; }
+  .del-btn { background: none; border: none; color: var(--text-muted); font-size: 20px; line-height: 1; padding: 2px 4px; flex-shrink: 0; }
+  .empty-note { font-size: 13px; color: var(--text-muted); padding: 6px 0 2px; }
+  .footnote { font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-top: 1.75rem; }
+  .reset-link { font-size: 11px; color: var(--text-muted); text-decoration: underline; background: none; border: none; padding: 0; margin-top: 1.25rem; display: block; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>5 de Oro generator</h1>
+  <p class="subtitle">Combination generator, balanced across Low, Mid and High</p>
+
+  <div class="legend">
+    <span><span class="dot" style="background:var(--low-text)"></span>Low 1-16</span>
+    <span><span class="dot" style="background:var(--mid-text)"></span>Mid 17-32</span>
+    <span><span class="dot" style="background:var(--high-text)"></span>High 33-48</span>
+    <span><span class="dot ring"></span>Extra</span>
+  </div>
+
+  <div class="toggle">
+    <button id="mode-random">Random</button>
+    <button id="mode-weighted">Weighted by history</button>
+  </div>
+  <button class="gen-btn" id="generate-btn">Generate 3 combinations</button>
+  <div class="meta" id="draw-count-label">Based on 405 draws</div>
+
+  <div id="results"></div>
+
+  <div class="section-title">Add new draw results</div>
+  <textarea id="new-draws-input" placeholder="One draw per line: 5 numbers then Extra, e.g.&#10;3 12 19 27 40 8&#10;7 16 26 27 40 4"></textarea>
+  <button class="secondary-btn" id="add-draws-btn">Add draws</button>
+  <div class="status-msg" id="add-draws-status"></div>
+
+  <div class="section-title">Saved combinations</div>
+  <div id="saved-list"></div>
+
+  <div class="footnote">
+    This tool does not improve odds of matching a future draw &mdash; every combination of 5 from 48 has the same 1 in 1,712,304 chance. It offers a neutral way to choose, optionally weighted toward numbers that have appeared more often historically (which is statistically indistinguishable from random noise). Saved combinations are automatically checked against any draws you add above.
+  </div>
+  <button class="reset-link" id="reset-link">Reset to default data</button>
+</div>
+
+<script>
+// ---- Baked-in defaults (405 draws, as of 06/09/2026) ----
+const DEFAULT_MAIN_COUNTS = [49,48,32,53,36,38,53,41,42,44,41,36,32,40,36,46,38,41,44,47,43,47,40,44,46,38,47,41,33,40,47,42,40,50,44,44,39,35,42,37,38,42,51,39,38,46,49,46];
+const DEFAULT_EXTRA_COUNTS = [7,11,6,4,8,4,5,9,11,9,4,5,10,12,10,13,11,12,11,8,9,5,5,7,13,7,13,12,4,13,5,9,4,6,8,8,7,11,7,8,9,9,8,10,7,11,10,10];
+const DEFAULT_TOTAL_DRAWS = 405;
+
+let mainCounts, extraCounts, totalDraws, savedCombos;
+
+function loadState() {
+  try {
+    const m = localStorage.getItem('fdo_mainCounts');
+    const e = localStorage.getItem('fdo_extraCounts');
+    const t = localStorage.getItem('fdo_totalDraws');
+    const s = localStorage.getItem('fdo_savedCombos');
+    mainCounts = m ? JSON.parse(m) : DEFAULT_MAIN_COUNTS.slice();
+    extraCounts = e ? JSON.parse(e) : DEFAULT_EXTRA_COUNTS.slice();
+    totalDraws = t ? parseInt(t, 10) : DEFAULT_TOTAL_DRAWS;
+    savedCombos = s ? JSON.parse(s) : [];
+  } catch (err) {
+    mainCounts = DEFAULT_MAIN_COUNTS.slice();
+    extraCounts = DEFAULT_EXTRA_COUNTS.slice();
+    totalDraws = DEFAULT_TOTAL_DRAWS;
+    savedCombos = [];
+  }
+}
+
+function saveState() {
+  try {
+    localStorage.setItem('fdo_mainCounts', JSON.stringify(mainCounts));
+    localStorage.setItem('fdo_extraCounts', JSON.stringify(extraCounts));
+    localStorage.setItem('fdo_totalDraws', String(totalDraws));
+    localStorage.setItem('fdo_savedCombos', JSON.stringify(savedCombos));
+  } catch (err) {}
+}
+
+function categoryOf(n) {
+  if (n <= 16) return 'Low';
+  if (n <= 32) return 'Mid';
+  return 'High';
+}
+const catColor = {
+  Low:  {bg: 'rgba(63,167,150,0.18)',  text: 'var(--low-text)'},
+  Mid:  {bg: 'rgba(124,111,209,0.18)', text: 'var(--mid-text)'},
+  High: {bg: 'rgba(201,138,46,0.18)',  text: 'var(--high-text)'}
+};
+
+function buildPools() {
+  const LOW = [], MID = [], HIGH = [];
+  for (let n = 1; n <= 48; n++) {
+    const c = mainCounts[n-1];
+    if (n <= 16) LOW.push({n, c});
+    else if (n <= 32) MID.push({n, c});
+    else HIGH.push({n, c});
+  }
+  return {Low: LOW, Mid: MID, High: HIGH};
+}
+const patterns = [
+  {Low:2, Mid:2, High:1},
+  {Low:1, Mid:2, High:2},
+  {Low:2, Mid:1, High:2}
+];
+
+let mode = 'weighted';
+
+function pick(poolArr, k, weighted) {
+  const pool = poolArr.map(x => ({n: x.n, w: weighted ? x.c : 1}));
+  const chosen = [];
+  for (let i = 0; i < k; i++) {
+    const total = pool.reduce((s,x) => s + x.w, 0) || pool.length;
+    let r = Math.random() * total;
+    let idx = 0;
+    for (; idx < pool.length; idx++) {
+      r -= (pool[idx].w || 1);
+      if (r <= 0) break;
+    }
+    if (idx >= pool.length) idx = pool.length - 1;
+    chosen.push(pool[idx].n);
+    pool.splice(idx, 1);
+  }
+  return chosen;
+}
+
+function pickExtra(weighted) {
+  const pool = [];
+  for (let n = 1; n <= 48; n++) pool.push({n, w: weighted ? extraCounts[n-1] : 1});
+  const total = pool.reduce((s,x) => s + x.w, 0) || pool.length;
+  let r = Math.random() * total;
+  for (const item of pool) {
+    r -= (item.w || 1);
+    if (r <= 0) return item.n;
+  }
+  return pool[pool.length-1].n;
+}
+
+function makePill(n, cls) {
+  const pill = document.createElement('span');
+  pill.className = 'pill' + (cls ? ' ' + cls : '');
+  if (!cls) {
+    const style = catColor[categoryOf(n)];
+    pill.style.background = style.bg;
+    pill.style.color = style.text;
+  }
+  pill.textContent = n;
+  return pill;
+}
+
+function render() {
+  const pools = buildPools();
+  const results = document.getElementById('results');
+  results.innerHTML = '';
+  patterns.forEach(pat => {
+    let combo = [];
+    for (const cat of ['Low','Mid','High']) {
+      combo = combo.concat(pick(pools[cat], pat[cat], mode === 'weighted'));
+    }
+    combo.sort((a,b) => a-b);
+    const extra = pickExtra(mode === 'weighted');
+
+    const card = document.createElement('div');
+    card.className = 'combo-card';
+    const row = document.createElement('div');
+    row.className = 'combo-row';
+    combo.forEach(n => row.appendChild(makePill(n)));
+    row.appendChild(makePill(extra, 'extra-pill'));
+    card.appendChild(row);
+
+    const saveRow = document.createElement('div');
+    saveRow.className = 'save-row';
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'save-btn';
+    saveBtn.textContent = 'Save';
+    saveBtn.addEventListener('click', () => {
+      savedCombos.push({
+        id: Date.now() + '-' + Math.random().toString(36).slice(2,7),
+        main: combo.slice(),
+        extra: extra,
+        savedAt: new Date().toISOString(),
+        checks: []
+      });
+      saveState();
+      saveBtn.textContent = 'Saved';
+      saveBtn.classList.add('done');
+      saveBtn.disabled = true;
+      renderSaved();
+    });
+    saveRow.appendChild(saveBtn);
+    card.appendChild(saveRow);
+
+    results.appendChild(card);
+  });
+}
+
+function renderSaved() {
+  const container = document.getElementById('saved-list');
+  container.innerHTML = '';
+  if (savedCombos.length === 0) {
+    const p = document.createElement('div');
+    p.className = 'empty-note';
+    p.textContent = 'No saved combinations yet — tap Save on any combo above.';
+    container.appendChild(p);
+    return;
+  }
+  savedCombos.slice().reverse().forEach(combo => {
+    const row = document.createElement('div');
+    row.className = 'saved-row';
+
+    const numsWrap = document.createElement('div');
+    numsWrap.className = 'saved-nums';
+    combo.main.forEach(n => {
+      const p = document.createElement('span');
+      p.className = 'mini-pill';
+      const style = catColor[categoryOf(n)];
+      p.style.background = style.bg;
+      p.style.color = style.text;
+      p.textContent = n;
+      numsWrap.appendChild(p);
+    });
+    const extraP = document.createElement('span');
+    extraP.className = 'mini-pill extra-pill';
+    extraP.textContent = combo.extra;
+    numsWrap.appendChild(extraP);
+    row.appendChild(numsWrap);
+
+    const status = document.createElement('div');
+    status.className = 'saved-status';
+    const checks = combo.checks || [];
+    if (checks.length === 0) {
+      status.textContent = 'Not checked yet';
+    } else {
+      const best = Math.max(...checks.map(c => c.mainMatches));
+      const anyExtra = checks.some(c => c.extraMatch);
+      status.textContent = 'vs ' + checks.length + ' draw' + (checks.length > 1 ? 's' : '') + ' \u2014 best ' + best + '/5' + (anyExtra ? ' +E' : '');
+    }
+    row.appendChild(status);
+
+    const del = document.createElement('button');
+    del.className = 'del-btn';
+    del.textContent = '\u00d7';
+    del.addEventListener('click', () => {
+      savedCombos = savedCombos.filter(c => c.id !== combo.id);
+      saveState();
+      renderSaved();
+    });
+    row.appendChild(del);
+
+    container.appendChild(row);
+  });
+}
+
+function setMode(newMode) {
+  mode = newMode;
+  document.getElementById('mode-random').classList.toggle('active', mode === 'random');
+  document.getElementById('mode-weighted').classList.toggle('active', mode === 'weighted');
+}
+
+function parseDrawsText(text) {
+  const lines = text.split('\n');
+  const parsedDraws = [];
+  let skipped = 0;
+  for (let raw of lines) {
+    let line = raw.trim();
+    if (!line) continue;
+    line = line.replace(/\d{1,2}\/\d{1,2}\/\d{2,4}/g, ' ');
+    const nums = (line.match(/\d+/g) || []).map(Number);
+    if (nums.length < 6) { skipped++; continue; }
+    const last6 = nums.slice(-6);
+    const main5 = last6.slice(0, 5);
+    const extra = last6[5];
+    const valid = main5.every(n => n >= 1 && n <= 48) && extra >= 1 && extra <= 48 && new Set(main5).size === 5;
+    if (!valid) { skipped++; continue; }
+    parsedDraws.push({main: main5, extra: extra});
+  }
+  return {parsedDraws, skipped};
+}
+
+function updateDrawCountLabel() {
+  document.getElementById('draw-count-label').textContent = 'Based on ' + totalDraws + ' draws';
+}
+
+document.getElementById('mode-random').addEventListener('click', () => setMode('random'));
+document.getElementById('mode-weighted').addEventListener('click', () => setMode('weighted'));
+document.getElementById('generate-btn').addEventListener('click', render);
+
+document.getElementById('add-draws-btn').addEventListener('click', () => {
+  const input = document.getElementById('new-draws-input');
+  const statusEl = document.getElementById('add-draws-status');
+  const {parsedDraws, skipped} = parseDrawsText(input.value);
+  if (parsedDraws.length === 0) {
+    statusEl.textContent = skipped > 0
+      ? 'No valid draws found \u2014 check the format (5 numbers 1-48, then Extra).'
+      : 'Paste at least one draw first.';
+    return;
+  }
+  parsedDraws.forEach(d => {
+    d.main.forEach(n => mainCounts[n-1]++);
+    extraCounts[d.extra-1]++;
+    totalDraws++;
+    savedCombos.forEach(combo => {
+      const mainMatches = combo.main.filter(n => d.main.includes(n)).length;
+      const extraMatch = combo.extra === d.extra;
+      combo.checks = combo.checks || [];
+      combo.checks.push({mainMatches, extraMatch});
+    });
+  });
+  saveState();
+  updateDrawCountLabel();
+  renderSaved();
+  input.value = '';
+  statusEl.textContent = 'Added ' + parsedDraws.length + ' draw' + (parsedDraws.length > 1 ? 's' : '') +
+    (skipped > 0 ? ' (' + skipped + ' line' + (skipped > 1 ? 's' : '') + ' skipped)' : '') +
+    '. Now based on ' + totalDraws + ' draws.';
+});
+
+document.getElementById('reset-link').addEventListener('click', () => {
+  const keepSaved = savedCombos;
+  try {
+    localStorage.removeItem('fdo_mainCounts');
+    localStorage.removeItem('fdo_extraCounts');
+    localStorage.removeItem('fdo_totalDraws');
+  } catch (err) {}
+  mainCounts = DEFAULT_MAIN_COUNTS.slice();
+  extraCounts = DEFAULT_EXTRA_COUNTS.slice();
+  totalDraws = DEFAULT_TOTAL_DRAWS;
+  savedCombos = keepSaved;
+  saveState();
+  updateDrawCountLabel();
+  render();
+  renderSaved();
+  document.getElementById('add-draws-status').textContent = 'Reset to the built-in 405-draw dataset. Saved combinations were kept.';
+});
+
+loadState();
+setMode('weighted');
+updateDrawCountLabel();
+render();
+renderSaved();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
