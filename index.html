@@ -47,12 +47,21 @@
     background: var(--surface); color: var(--text-secondary); font-size: 14px; font-weight: 500;
   }
   .toggle button.active { background: rgba(212,167,61,0.14); border-color: var(--gold); color: var(--gold-text); }
+  .stepper-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .stepper-label { font-size: 13px; color: var(--text-secondary); flex: 1; }
+  .stepper-btn {
+    width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text); font-size: 17px; font-weight: 600; line-height: 1;
+  }
+  .stepper-btn:disabled { opacity: 0.35; }
+  .stepper-count { min-width: 22px; text-align: center; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
   .gen-btn {
     width: 100%; padding: 14px; margin-bottom: 6px; border-radius: 10px; border: none;
     background: var(--gold); color: #26190A; font-size: 15px; font-weight: 600;
   }
   .gen-btn:active { transform: scale(0.98); }
-  .meta { font-size: 12px; color: var(--text-muted); margin-bottom: 1.5rem; }
+  .meta { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+  .meta-wrap { margin-bottom: 1.5rem; }
   .combo-card {
     background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
     padding: 14px; margin-bottom: 10px;
@@ -63,21 +72,27 @@
     justify-content: center; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums;
   }
   .pill.extra-pill { background: rgba(212,167,61,0.10); color: var(--gold-text); border: 2px solid var(--gold); }
-  .save-row { display: flex; justify-content: flex-end; margin-top: 10px; }
+  .card-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
   .save-btn { padding: 7px 16px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text-secondary); font-size: 12px; font-weight: 500; }
   .save-btn.done { border-color: var(--low); color: var(--low-text); }
   .section-title { font-size: 15px; font-weight: 600; margin: 1.75rem 0 8px; }
+  .section-hint { font-size: 12px; color: var(--text-muted); margin: -6px 0 8px; }
   textarea {
     width: 100%; min-height: 84px; background: var(--surface); border: 1px solid var(--border);
     border-radius: 10px; color: var(--text); padding: 10px; font-size: 13px;
     font-family: inherit; resize: vertical;
   }
+  textarea[readonly] { color: var(--text-secondary); }
   textarea::placeholder { color: var(--text-muted); }
   .secondary-btn {
     width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border);
     background: var(--surface-2); color: var(--text); font-size: 14px; font-weight: 500; margin-top: 8px;
   }
   .status-msg { font-size: 12px; color: var(--text-secondary); margin-top: 8px; min-height: 16px; }
+  .undo-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .undo-label { font-size: 12px; color: var(--text-muted); flex: 1; }
+  .undo-btn { padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--text-secondary); font-size: 12px; font-weight: 500; white-space: nowrap; }
+  .undo-btn:disabled { opacity: 0.35; }
   .saved-row {
     display: flex; align-items: center; gap: 10px; background: var(--surface);
     border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px;
@@ -93,11 +108,12 @@
   .empty-note { font-size: 13px; color: var(--text-muted); padding: 6px 0 2px; }
   .footnote { font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-top: 1.75rem; }
   .reset-link { font-size: 11px; color: var(--text-muted); text-decoration: underline; background: none; border: none; padding: 0; margin-top: 1.25rem; display: block; }
+  hr.divider { border: none; border-top: 1px solid var(--border); margin: 2rem 0 0; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>5 de Oro Generator</h1>
+  <h1>5 de Oro generator</h1>
   <p class="subtitle">Combination generator, balanced across Low, Mid and High</p>
 
   <div class="legend">
@@ -111,8 +127,19 @@
     <button id="mode-random">Random</button>
     <button id="mode-weighted">Weighted by history</button>
   </div>
+
+  <div class="stepper-row">
+    <span class="stepper-label">Combinations to generate</span>
+    <button class="stepper-btn" id="count-minus">&minus;</button>
+    <span class="stepper-count" id="combo-count-display">3</span>
+    <button class="stepper-btn" id="count-plus">+</button>
+  </div>
+
   <button class="gen-btn" id="generate-btn">Generate 3 combinations</button>
-  <div class="meta" id="draw-count-label">Based on 405 draws</div>
+  <div class="meta-wrap">
+    <div class="meta" id="draw-count-label">Based on 405 draws</div>
+    <div class="meta" id="fairness-label"></div>
+  </div>
 
   <div id="results"></div>
 
@@ -120,9 +147,24 @@
   <textarea id="new-draws-input" placeholder="One draw per line: 5 numbers then Extra, e.g.&#10;3 12 19 27 40 8&#10;7 16 26 27 40 4"></textarea>
   <button class="secondary-btn" id="add-draws-btn">Add draws</button>
   <div class="status-msg" id="add-draws-status"></div>
+  <div class="undo-row">
+    <span class="undo-label" id="undo-label">No additions to undo yet.</span>
+    <button class="undo-btn" id="undo-btn" disabled>Undo last add</button>
+  </div>
 
+  <hr class="divider">
   <div class="section-title">Saved combinations</div>
   <div id="saved-list"></div>
+
+  <hr class="divider">
+  <div class="section-title">Backup &amp; restore</div>
+  <p class="section-hint">Everything lives only in this browser. Export before switching phones or clearing browser data.</p>
+  <button class="secondary-btn" id="export-btn">Export data</button>
+  <textarea id="export-output" readonly placeholder="Tap Export to generate a backup you can copy and save."></textarea>
+  <div class="status-msg" id="export-status"></div>
+  <textarea id="import-input" placeholder="Paste previously exported data here"></textarea>
+  <button class="secondary-btn" id="import-btn">Import data</button>
+  <div class="status-msg" id="import-status"></div>
 
   <div class="footnote">
     This tool does not improve odds of matching a future draw &mdash; every combination of 5 from 48 has the same 1 in 1,712,304 chance. It offers a neutral way to choose, optionally weighted toward numbers that have appeared more often historically (which is statistically indistinguishable from random noise). Saved combinations are automatically checked against any draws you add above.
@@ -135,8 +177,9 @@
 const DEFAULT_MAIN_COUNTS = [49,48,32,53,36,38,53,41,42,44,41,36,32,40,36,46,38,41,44,47,43,47,40,44,46,38,47,41,33,40,47,42,40,50,44,44,39,35,42,37,38,42,51,39,38,46,49,46];
 const DEFAULT_EXTRA_COUNTS = [7,11,6,4,8,4,5,9,11,9,4,5,10,12,10,13,11,12,11,8,9,5,5,7,13,7,13,12,4,13,5,9,4,6,8,8,7,11,7,8,9,9,8,10,7,11,10,10];
 const DEFAULT_TOTAL_DRAWS = 405;
+const MIN_COMBOS = 1, MAX_COMBOS = 10, MAX_LOG = 20;
 
-let mainCounts, extraCounts, totalDraws, savedCombos;
+let mainCounts, extraCounts, totalDraws, savedCombos, addLog, comboCount;
 
 function loadState() {
   try {
@@ -144,15 +187,22 @@ function loadState() {
     const e = localStorage.getItem('fdo_extraCounts');
     const t = localStorage.getItem('fdo_totalDraws');
     const s = localStorage.getItem('fdo_savedCombos');
+    const l = localStorage.getItem('fdo_addLog');
+    const c = localStorage.getItem('fdo_comboCount');
     mainCounts = m ? JSON.parse(m) : DEFAULT_MAIN_COUNTS.slice();
     extraCounts = e ? JSON.parse(e) : DEFAULT_EXTRA_COUNTS.slice();
     totalDraws = t ? parseInt(t, 10) : DEFAULT_TOTAL_DRAWS;
     savedCombos = s ? JSON.parse(s) : [];
+    addLog = l ? JSON.parse(l) : [];
+    comboCount = c ? parseInt(c, 10) : 3;
+    if (!(comboCount >= MIN_COMBOS && comboCount <= MAX_COMBOS)) comboCount = 3;
   } catch (err) {
     mainCounts = DEFAULT_MAIN_COUNTS.slice();
     extraCounts = DEFAULT_EXTRA_COUNTS.slice();
     totalDraws = DEFAULT_TOTAL_DRAWS;
     savedCombos = [];
+    addLog = [];
+    comboCount = 3;
   }
 }
 
@@ -162,6 +212,8 @@ function saveState() {
     localStorage.setItem('fdo_extraCounts', JSON.stringify(extraCounts));
     localStorage.setItem('fdo_totalDraws', String(totalDraws));
     localStorage.setItem('fdo_savedCombos', JSON.stringify(savedCombos));
+    localStorage.setItem('fdo_addLog', JSON.stringify(addLog));
+    localStorage.setItem('fdo_comboCount', String(comboCount));
   } catch (err) {}
 }
 
@@ -236,11 +288,25 @@ function makePill(n, cls) {
   return pill;
 }
 
+function copyText(text, btn) {
+  const revert = () => { setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('done'); }, 1400); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = 'Copied'; btn.classList.add('done'); revert();
+    }).catch(() => {
+      btn.textContent = 'Copy failed'; revert();
+    });
+  } else {
+    btn.textContent = 'Copy failed'; revert();
+  }
+}
+
 function render() {
   const pools = buildPools();
   const results = document.getElementById('results');
   results.innerHTML = '';
-  patterns.forEach(pat => {
+  for (let i = 0; i < comboCount; i++) {
+    const pat = patterns[i % patterns.length];
     let combo = [];
     for (const cat of ['Low','Mid','High']) {
       combo = combo.concat(pick(pools[cat], pat[cat], mode === 'weighted'));
@@ -256,8 +322,17 @@ function render() {
     row.appendChild(makePill(extra, 'extra-pill'));
     card.appendChild(row);
 
-    const saveRow = document.createElement('div');
-    saveRow.className = 'save-row';
+    const actions = document.createElement('div');
+    actions.className = 'card-actions';
+
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'save-btn';
+    copyBtn.textContent = 'Copy';
+    copyBtn.addEventListener('click', () => {
+      copyText(combo.join(', ') + ' + ' + extra, copyBtn);
+    });
+    actions.appendChild(copyBtn);
+
     const saveBtn = document.createElement('button');
     saveBtn.className = 'save-btn';
     saveBtn.textContent = 'Save';
@@ -275,11 +350,11 @@ function render() {
       saveBtn.disabled = true;
       renderSaved();
     });
-    saveRow.appendChild(saveBtn);
-    card.appendChild(saveRow);
+    actions.appendChild(saveBtn);
+    card.appendChild(actions);
 
     results.appendChild(card);
-  });
+  }
 }
 
 function renderSaved() {
@@ -345,6 +420,20 @@ function setMode(newMode) {
   document.getElementById('mode-weighted').classList.toggle('active', mode === 'weighted');
 }
 
+function updateComboCountUI() {
+  document.getElementById('combo-count-display').textContent = comboCount;
+  document.getElementById('generate-btn').textContent = 'Generate ' + comboCount + ' combination' + (comboCount > 1 ? 's' : '');
+  document.getElementById('count-minus').disabled = comboCount <= MIN_COMBOS;
+  document.getElementById('count-plus').disabled = comboCount >= MAX_COMBOS;
+}
+
+document.getElementById('count-minus').addEventListener('click', () => {
+  if (comboCount > MIN_COMBOS) { comboCount--; updateComboCountUI(); saveState(); }
+});
+document.getElementById('count-plus').addEventListener('click', () => {
+  if (comboCount < MAX_COMBOS) { comboCount++; updateComboCountUI(); saveState(); }
+});
+
 function parseDrawsText(text) {
   const lines = text.split('\n');
   const parsedDraws = [];
@@ -369,6 +458,33 @@ function updateDrawCountLabel() {
   document.getElementById('draw-count-label').textContent = 'Based on ' + totalDraws + ' draws';
 }
 
+// Exact chi-square p-value for df=2 is exp(-chi2/2) — no approximation needed.
+function updateFairnessLabel() {
+  const low = mainCounts.slice(0, 16).reduce((a,b) => a+b, 0);
+  const mid = mainCounts.slice(16, 32).reduce((a,b) => a+b, 0);
+  const high = mainCounts.slice(32, 48).reduce((a,b) => a+b, 0);
+  const total = low + mid + high;
+  const exp = total / 3;
+  const chi2 = ((low-exp)**2)/exp + ((mid-exp)**2)/exp + ((high-exp)**2)/exp;
+  const p = Math.exp(-chi2 / 2);
+  document.getElementById('fairness-label').textContent =
+    'Low/Mid/High balance: \u03c7\u00b2 = ' + chi2.toFixed(2) + ', p = ' + p.toFixed(2) + ' (a small p would flag a real skew)';
+}
+
+function updateUndoUI() {
+  const btn = document.getElementById('undo-btn');
+  const label = document.getElementById('undo-label');
+  if (addLog.length === 0) {
+    btn.disabled = true;
+    label.textContent = 'No additions to undo yet.';
+  } else {
+    const last = addLog[addLog.length - 1];
+    btn.disabled = false;
+    const when = new Date(last.timestamp);
+    label.textContent = 'Last added ' + last.count + ' draw' + (last.count > 1 ? 's' : '') + ' \u2014 ' + when.toLocaleString();
+  }
+}
+
 document.getElementById('mode-random').addEventListener('click', () => setMode('random'));
 document.getElementById('mode-weighted').addEventListener('click', () => setMode('weighted'));
 document.getElementById('generate-btn').addEventListener('click', render);
@@ -383,6 +499,14 @@ document.getElementById('add-draws-btn').addEventListener('click', () => {
       : 'Paste at least one draw first.';
     return;
   }
+
+  const snapshot = {
+    mainCounts: mainCounts.slice(),
+    extraCounts: extraCounts.slice(),
+    totalDraws: totalDraws,
+    savedCombos: JSON.parse(JSON.stringify(savedCombos))
+  };
+
   parsedDraws.forEach(d => {
     d.main.forEach(n => mainCounts[n-1]++);
     extraCounts[d.extra-1]++;
@@ -394,13 +518,98 @@ document.getElementById('add-draws-btn').addEventListener('click', () => {
       combo.checks.push({mainMatches, extraMatch});
     });
   });
+
+  addLog.push({timestamp: new Date().toISOString(), count: parsedDraws.length, snapshot});
+  if (addLog.length > MAX_LOG) addLog.shift();
+
   saveState();
   updateDrawCountLabel();
+  updateFairnessLabel();
+  updateUndoUI();
   renderSaved();
   input.value = '';
   statusEl.textContent = 'Added ' + parsedDraws.length + ' draw' + (parsedDraws.length > 1 ? 's' : '') +
     (skipped > 0 ? ' (' + skipped + ' line' + (skipped > 1 ? 's' : '') + ' skipped)' : '') +
     '. Now based on ' + totalDraws + ' draws.';
+});
+
+document.getElementById('undo-btn').addEventListener('click', () => {
+  if (addLog.length === 0) return;
+  const last = addLog.pop();
+  mainCounts = last.snapshot.mainCounts;
+  extraCounts = last.snapshot.extraCounts;
+  totalDraws = last.snapshot.totalDraws;
+  savedCombos = last.snapshot.savedCombos;
+  saveState();
+  updateDrawCountLabel();
+  updateFairnessLabel();
+  renderSaved();
+  updateUndoUI();
+  document.getElementById('add-draws-status').textContent = 'Undid the last addition of ' + last.count + ' draw' + (last.count > 1 ? 's' : '') + '.';
+});
+
+document.getElementById('export-btn').addEventListener('click', () => {
+  const payload = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    mainCounts, extraCounts, totalDraws, savedCombos, addLog, comboCount
+  };
+  const json = JSON.stringify(payload);
+  document.getElementById('export-output').value = json;
+  const statusEl = document.getElementById('export-status');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(json).then(() => {
+      statusEl.textContent = 'Copied to clipboard \u2014 paste it somewhere safe (notes app, email to yourself, etc).';
+    }).catch(() => {
+      statusEl.textContent = 'Couldn\u2019t auto-copy \u2014 select the text above and copy it manually.';
+    });
+  } else {
+    statusEl.textContent = 'Select the text above and copy it manually.';
+  }
+});
+
+document.getElementById('import-btn').addEventListener('click', () => {
+  const input = document.getElementById('import-input');
+  const statusEl = document.getElementById('import-status');
+  let parsed;
+  try {
+    parsed = JSON.parse(input.value.trim());
+  } catch (err) {
+    statusEl.textContent = 'That doesn\u2019t look like valid exported data (couldn\u2019t parse it).';
+    return;
+  }
+  const validArray48 = (a) => Array.isArray(a) && a.length === 48 && a.every(n => typeof n === 'number' && Number.isFinite(n));
+  if (!parsed || !validArray48(parsed.mainCounts) || !validArray48(parsed.extraCounts) || typeof parsed.totalDraws !== 'number') {
+    statusEl.textContent = 'That data is missing required fields \u2014 make sure you pasted a full export.';
+    return;
+  }
+  const validCombos = (Array.isArray(parsed.savedCombos) ? parsed.savedCombos : []).filter(c =>
+    c && Array.isArray(c.main) && c.main.length === 5 && c.main.every(n => typeof n === 'number') && typeof c.extra === 'number'
+  ).map(c => ({
+    id: c.id || (Date.now() + '-' + Math.random().toString(36).slice(2,7)),
+    main: c.main.slice(),
+    extra: c.extra,
+    savedAt: c.savedAt || new Date().toISOString(),
+    checks: Array.isArray(c.checks) ? c.checks : []
+  }));
+
+  mainCounts = parsed.mainCounts.slice();
+  extraCounts = parsed.extraCounts.slice();
+  totalDraws = parsed.totalDraws;
+  savedCombos = validCombos;
+  addLog = Array.isArray(parsed.addLog) ? parsed.addLog : [];
+  if (typeof parsed.comboCount === 'number' && parsed.comboCount >= MIN_COMBOS && parsed.comboCount <= MAX_COMBOS) {
+    comboCount = parsed.comboCount;
+  }
+  saveState();
+  updateDrawCountLabel();
+  updateFairnessLabel();
+  updateUndoUI();
+  updateComboCountUI();
+  render();
+  renderSaved();
+  input.value = '';
+  statusEl.textContent = 'Import successful \u2014 restored ' + totalDraws + ' draws and ' + savedCombos.length + ' saved combination' + (savedCombos.length === 1 ? '' : 's') + '.';
 });
 
 document.getElementById('reset-link').addEventListener('click', () => {
@@ -409,13 +618,17 @@ document.getElementById('reset-link').addEventListener('click', () => {
     localStorage.removeItem('fdo_mainCounts');
     localStorage.removeItem('fdo_extraCounts');
     localStorage.removeItem('fdo_totalDraws');
+    localStorage.removeItem('fdo_addLog');
   } catch (err) {}
   mainCounts = DEFAULT_MAIN_COUNTS.slice();
   extraCounts = DEFAULT_EXTRA_COUNTS.slice();
   totalDraws = DEFAULT_TOTAL_DRAWS;
   savedCombos = keepSaved;
+  addLog = [];
   saveState();
   updateDrawCountLabel();
+  updateFairnessLabel();
+  updateUndoUI();
   render();
   renderSaved();
   document.getElementById('add-draws-status').textContent = 'Reset to the built-in 405-draw dataset. Saved combinations were kept.';
@@ -423,7 +636,10 @@ document.getElementById('reset-link').addEventListener('click', () => {
 
 loadState();
 setMode('weighted');
+updateComboCountUI();
 updateDrawCountLabel();
+updateFairnessLabel();
+updateUndoUI();
 render();
 renderSaved();
 
