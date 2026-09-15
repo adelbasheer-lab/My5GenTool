@@ -113,7 +113,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>5 de Oro Generator</h1>
+  <h1>5 de Oro generator</h1>
   <p class="subtitle">Combination generator, balanced across Low, Mid and High</p>
 
   <div class="legend">
@@ -144,6 +144,10 @@
   <div id="results"></div>
 
   <div class="section-title">Add new draw results</div>
+  <p class="section-hint">Draws happen Wednesday &amp; Sunday nights. This app can't fetch them automatically (no server, and the official site blocks cross-site requests) &mdash; open the page, copy the numbers, and paste below.</p>
+  <a href="https://www.labanca.com.uy/juegos/cinco-de-oro/resultados-y-jugadas" target="_blank" rel="noopener" style="text-decoration:none;">
+    <button type="button" class="secondary-btn" id="open-official-btn">Open official results page ↗</button>
+  </a>
   <textarea id="new-draws-input" placeholder="One draw per line: 5 numbers then Extra, e.g.&#10;3 12 19 27 40 8&#10;7 16 26 27 40 4"></textarea>
   <button class="secondary-btn" id="add-draws-btn">Add draws</button>
   <div class="status-msg" id="add-draws-status"></div>
